@@ -47,15 +47,17 @@ __global__ void fwd_kernel(net<NET_N_LAYER>* _net)
     }
     //ここで、
     //最終段のdE/daを求めます。
-    _net->loss_softmax_with_crossentropy();     //
-    //
+//    _net->loss_softmax_with_crossentropy();       //
+//    _net->loss_softmax_with_crossentropy();
+    _net->test();
+    _net->loss_softmax_with_crossentropy();
 }
 
 int main() {
 
     dumpGPUInfo();
 
-    net<NET_N_LAYER> myNet(3,5,2);  // 3ノード、5ノード、2ノードを持つネットワークを作成
+    net<NET_N_LAYER> myNet(3,5,7);  // 3ノード、5ノード、2ノードを持つネットワークを作成
     //net自身をgpuへコピーします。
     //input作る
     for (int i = 0; i < myNet.layers[0].nodes.size; ++i) {

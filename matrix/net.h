@@ -106,6 +106,47 @@ struct net
     //最終レイヤーのdE/daを求めるための
     __device__ void loss_softmax_with_crossentropy();
 
+    __device__ void test() {
+        ;
+    }
+
 
 };
 
+template<size_t N>
+__device__ void net<N>::loss_softmax_with_crossentropy()
+{
+    layer& l = layers[N - 1];    //最終レイヤー
+    //GPUを利用して、MAXを計算します。
+    int x = threadIdx.x;
+
+
+    //一番近い2のs累乗の数字を探す。
+    __shared__ float max[N * 2];
+    {
+        int _n = 1;
+        while (_n <= N) {
+            _n <<= 1;  // 2倍していく
+        }
+        //ここで_nが定まりました。
+        // 初期化します。
+        if (x < N) {
+            max[x] = l.nodes.gpu[x].a;
+        }
+        //N-_nまでを小さい数字で埋める
+        if (x < (_n - N ) ) { //
+            max[N + x] = -100000000;
+        }
+        __syncthreads();
+        //
+        for (int n = _n / 2; n > 1 ; n /= 2) {                                //N=7 : n=3         n=1
+            if (x < n) {                                              //thread.xは0,1,2 
+                max[x] = l.nodes.gpu[x].a > l.nodes.gpu[x + n].a;        //max(a[0],a[3])   , max(a[1],a[4]) , max[[2] ,[5] ,   
+            }
+            __syncthreads();
+        }
+        //ここでmax[0]に最大値はいっているはず
+    }
+
+
+}

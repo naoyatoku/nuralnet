@@ -63,7 +63,9 @@ __device__ float loss_dE_dy_softmax_with_crossentropy(double y, double t)
 //          Σ   exp( ai  - amax)
 //          i
 //
-template<size_t N>
+
+
+#if 0
 __device__ void net<N>::loss_softmax_with_crossentropy()
 {
     layer &l  = layers[N-1];    //最終レイヤー
@@ -72,36 +74,30 @@ __device__ void net<N>::loss_softmax_with_crossentropy()
 
 
    //一番近い2のs累乗の数字を探す。
+   __shared__ float max[N*2];
    {
        int _n = 1;
         while (_n < N) {
             _n <<= 1;  // 2倍していく
         }
-        //ここで
-   }
-
-   float max[N];    //
-   //奇数だったらどうなるか
-   for(int n=N/2 ; n>1 ; n/=2 ){                                //N=7 : n=3         n=1
-        if(x < n){                                              //thread.xは0,1,2 
-            max[x] = l.nondes.gpu[x] > l.nodes.gpu[x+n];        //max(a[0],a[3])   , max(a[1],a[4]) , max[[2] ,[5] ,   
+        //ここで_nが定まりました。
+//        __shared__ float max[N*2];    //512は固定とします。動的にとるオーバヘッドを防ぐため
+        //奇数だったらどうなるか
+//        max[x]
+        for(int n=N/2 ; n>1 ; n/=2 ){                                //N=7 : n=3         n=1
+            if(x < n){                                              //thread.xは0,1,2 
+                max[x] = l.nodes.gpu[x].a > l.nodes.gpu[x+n].a;        //max(a[0],a[3])   , max(a[1],a[4]) , max[[2] ,[5] ,   
                                                                 //      max[0]          max[1]          max[2]
                                                                 // 
+            }
+            __syncthreads();
         }
-        __syncthreads();
    }
-   //ここでmax[0]が最大値になっています。
-   //奇数の場合、max[0]
-   if(N%2!=0){
-
-   }
-
-
 
 
 }
 
-
+#endif
 
 #if 0
 template<size_t N>
