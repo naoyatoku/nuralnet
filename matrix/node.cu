@@ -1,6 +1,6 @@
-﻿#include "common.h"
+﻿#include "common.cuh"
 #include <random>
-#include "node.h"
+#include "node.cuh"
 
 using namespace std;
 #include<stdio.h>
@@ -38,4 +38,71 @@ __host__ void node::__w_init_std(void){
 		printf("%lf,", w.cpu[i]);
 	}
 	printf("\r\n");
+}
+__device__ float node::activate(const layer *parent)
+{  // ReLU限定にしてみる
+    switch(act_type){
+    case ACT_SOFTMAX:
+        return activate_softmax(parent);
+        break;
+     case  ACT_RELU:
+         return (a < 0.0f) ? 0.0f : a;
+     case ACT_NOP:
+         return a;
+         break;
+    }
+}
+
+__device__ float node::d_activate()
+{
+    switch (act_type) {
+    case ACT_SOFTMAX:
+        return d_activate_softmax();
+        break;
+    case ACT_RELU:
+        return (a > 0.0f) ? 1.0f : 0.0f;
+    case ACT_NOP:
+    default:
+        return 1.0f;
+        break;
+    }
+}
+__host__ void node::alloc_w(int n_prev_nodes)
+{
+    w.alloc(n_prev_nodes);
+    __w_init_std();             //適当な値で初期化します。
+}
+//内包メンバのGPU転送です。
+__host__ void node::Transfer_contained_members_to_GPU() 
+{
+    w.Transfer_to_GPU();
+}
+__host__ void node::Transfer_contained_members_to_CPU() {
+    w.Transfer_to_CPU();    
+}
+__host__ __device__
+void node::dump(int l,int n)const 
+{
+    _pos(l * 40, n + 1);
+    printf(  "a[%8.6f]y[%8.6f]dEda[%8.6f]",a,y,dE_da );
+}
+
+//ノードののアクティベーションはmaxを計算するためにnetに依存する。が、すごくいやだ。
+
+#include "layer.cuh"    //ここでレイヤーの情報を得るのはいいらしい。
+__device__ float node::activate_softmax(const layer*p_parent_layer)
+{
+//    const layer& _l = _net->layers[this->nlyr];        //自分が所属するレイヤーです。
+//    float max;
+    if (threadIdx.x == 0) {
+        p_parent_layer->request(REQ_CALC_MAX);
+
+//        parent.request(0);
+//            max_kernel <<< 16, 1 >>> (0);
+    }
+//    __syncthreads();
+    return 0.0;
+}
+__device__ float node::d_activate_softmax(){            //
+    return 0.0;
 }

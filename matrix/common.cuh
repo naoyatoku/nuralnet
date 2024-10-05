@@ -33,7 +33,7 @@ __host__ __device__ static void _Assert( bool a, const char*comment ,...){
 
 //CPU,GPUの種類
 enum {
-    _CPU,_GPU
+    CPU,GPU
 };
 
 //--------------------------------------------------------------------------------------------------------------
@@ -47,13 +47,17 @@ struct weight{
 
 //CPUとGPU両方に対応したアドレスを表す型を作っておきます。
 template<typename T>
-struct cpu_gpu_mem
+class cpu_gpu_mem
 {
+public:
     T* cpu;
     T* gpu;
     int size;
     cpu_gpu_mem() : cpu(nullptr),gpu(nullptr){;}
-    cpu_gpu_mem(T* _cpu, T* _gpu) : cpu(_cpu), gpu(_gpu) { ; }
+    cpu_gpu_mem(int sz) :cpu_gpu_mem() {
+        alloc(sz);
+    }
+//    cpu_gpu_mem(T* _cpu, T* _gpu) : cpu(_cpu), gpu(_gpu) { ; }
     cpu_gpu_mem(const cpu_gpu_mem<T>&a) = default;
 
     template<typename S> operator cpu_gpu_mem<S> () const {
@@ -104,12 +108,29 @@ struct cpu_gpu_mem
     }
     __host__ __device__ void dump()const{printf("CPU[%p]GPU[%p]size[%d]\n",cpu, gpu , size); }
 
+    //()でアドレスを取得できると読みやすくなるか
+    __host__ __device__ T& operator()(int location,int  idx)const{
+        _Assert(idx < size , "cpu_gpu_mem::() size illegal");
+        if(location == GPU){
+            return gpu[idx];
+        }
+        return cpu[idx];
+    }
+    __host__ __device__ T& operator()(int location=CPU) {  //なにも添え字を指示しない場合は0番目を
+        return operator()(location, 0);
+    }
+
 
 };
 
+
+
 //エスケープシーケンス
-__host__ __device__ void pos_printf(int x, int y, char* fmt, ...);
+__host__ __device__ void _pos(int x, int y);
 __host__ __device__ void esc_clr();
+
+//gpuでは可変個引数を取れない
+//__host__ void pos_printf(int x, int y, char* fmt, ...);
 
 #endif  //
 
@@ -143,5 +164,7 @@ __host__ cpu_gpu_adr<T> alloc(int sz)
     }
 */
 
-
 //エスケープシーケンス
+
+__host__
+void dumpGPUInfo();
