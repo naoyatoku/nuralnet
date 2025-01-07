@@ -80,7 +80,8 @@ public:
         return *this;
     }
     //cpu→gpuへ転送する。
-    __host__ void Transfer_to_GPU() {
+    __host__
+    void Transfer_to_GPU() {
         //ここでヌルポインタをチェックします。
         if (!cpu && !gpu) {
             return;//

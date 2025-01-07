@@ -19,7 +19,6 @@ int main() {
     }
 
 
-
     _net.cpu->dump();
     //GPUへの転送作業です。
     _net().Transfer_contained_members_to_GPU();

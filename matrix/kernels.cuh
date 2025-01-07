@@ -13,4 +13,4 @@ __global__ void fwd_kernel(net* _net);
 //---------------------------------------------------
 //  sub_kernel.cu
 //---------------------------------------------------
-__device__ float calc_max( const node *nd , int size);
+__device__ float calc_max(const node* nd, int size);

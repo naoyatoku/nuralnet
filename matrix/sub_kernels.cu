@@ -56,18 +56,22 @@ __global__ void _calc_max_kernel(const node* nd, int n_node,float *_max)
     }
 #endif
     __syncthreads();
-
+    printf("max = %f\n", max[0]);
     *_max  = max[0];     //これが小舘です
     return;
 
 }
 //これがカーネルを呼び出します。呼び出したデバイスの状態に関係なく必要なスレッドを呼びたいため。
-__device__ float calc_max( const node *nd , int size)
+//device関数からは無理。
+__device__ float calc_max( const node *nd , int size )
 {
     _Assert(size < 512, "calcmax() thread num overflw");    //一番近い2のべき乗のスレッド数が必要なためスレッドｘの最大値は1024なので512を最大とします。これより大きなものの比較はまた別に考えます。
-    float max;
-    dim3 threads(size*2, 1, 1);                          //もしバッチでやりたい場合はブロック数またはyを増やすか
-    dim3 blocks(1, 1, 1);
-    _calc_max_kernel << < blocks, threads >> > (nd,size,&max);   //
-    return max;
+    __syncthreads();
+    if (threadIdx.x == 0) {
+        dim3 threads(size * 2, 1, 1);                          //もしバッチでやりたい場合はブロック数またはyを増やすか
+        dim3 blocks(1, 1, 1);
+//        _calc_max_kernel << < blocks, threads >> > (nd, size, max);   //
+//        cudaDeviceSynchronize();
+    }
+    __syncthreads();
 }

@@ -30,22 +30,13 @@ __global__ void fwd_kernel(net* _net)
                 cur.a += cur.b;     //bias
             }
         }
-
         __syncthreads();  // 全スレッドが同期する場所は、ループ内の条件外に配置する
-
         //=============================================================================
         //  activate
         //=============================================================================
         //ここはthreadIdx.xのみ、かつ同レイヤーのノード数しか入ってこない。そのため、内部でmaxの計算を擦る際に、ノード数以上のスレッドが必要になってしまう
-        if (prev_idx == 0 && cur_idx < L_cur.nodes.size) {      //  全結合が終わったので  : prev_idx==0 はthread.x , 各ノードは threadIdx.y
-            //これからの処理は対象レイヤーの各ノード分のスレッドのみ
-            node& cur = L_cur.nodes.gpu[cur_idx];
-            //
-#if 1
-            if(l==2)_net->dump(GPU);
-#endif
-            cur.y = cur.activate(&L_cur);     //ノードのactivateでsoftmaxの場合、全部のmaxとsumが必要
-        }
+        //全段処理します。softmax等の処理に必要な値の計算をスレッド
+        L_cur.gpu_activate();
         __syncthreads();  // さらに必要なら、もう一度同期を挟む
     }
 #if 1
@@ -64,5 +55,11 @@ __global__ void fwd_kernel(net* _net)
 //    _net->loss_softmax_with_crossentropy();
 //    _net->test();
 //    _net->loss_softmax_with_crossentropy();
+}
+
+__global__ void backward_kernel(net* _net)
+{
+    //
+
 }
 
